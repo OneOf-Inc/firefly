@@ -20,4 +20,5 @@ func main() {
 	if err := assetChaincode.Start(); err != nil {
 		log.Panicf("Error starting asset-transfer-basic chaincode: %v", err)
 	}
+	log.Println("Chaincode has been started")
 }

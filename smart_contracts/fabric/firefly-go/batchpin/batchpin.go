@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
@@ -27,23 +28,28 @@ type Event struct {
 }
 
 func BuildEvent(ctx contractapi.TransactionContextInterface, args *Args) (*Event, error) {
+	log.Println("BuildEvent start")
 	cid := ctx.GetClientIdentity()
 	id, err := cid.GetID()
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain client identity's ID: %s", err)
 	}
+	log.Println("BuildEvent GetClientIdentity done")
 	idString, err := base64.StdEncoding.DecodeString(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode client identity ID: %s", err)
 	}
+	log.Println("BuildEvent base64.StdEncoding.DecodeString done")
 	mspID, err := cid.GetMSPID()
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain client identity's MSP ID: %s", err)
 	}
+	log.Println("BuildEvent GetMSPID done")
 	timestamp, err := ctx.GetStub().GetTxTimestamp()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction timestamp: %s", err)
 	}
+	log.Println("BuildEvent finished")
 	return &Event{
 		Signer:     fmt.Sprintf("%s::%s", mspID, idString),
 		Timestamp:  timestamp,
