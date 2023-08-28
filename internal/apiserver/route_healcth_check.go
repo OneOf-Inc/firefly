@@ -25,18 +25,20 @@ import (
 )
 
 var healthCheck = &ffapi.Route{
-	Name:   "healthCheck",
-	Path:   "health",
-	Method: http.MethodGet,
-	PathParams: []*ffapi.PathParam{},
+	Name:            "healthCheck",
+	Path:            "health",
+	Method:          http.MethodGet,
+	PathParams:      nil,
 	QueryParams:     nil,
-	Description:     coremsgs.APIEndpointsGetNamespace,
+	Description:     coremsgs.APIEndpointsHealthCheck,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &core.Namespace{} },
+	JSONOutputValue: func() interface{} { return &core.HealthCheck{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return true, err
+			return &core.HealthCheck{
+				Up: true,
+			}, err
 		},
 	},
 }
