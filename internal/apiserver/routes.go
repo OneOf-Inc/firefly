@@ -50,6 +50,7 @@ var routes = append(
 		getNamespace,
 		getNamespaces,
 		getWebSockets,
+		healthCheck,
 	}),
 	namespacedRoutes([]*ffapi.Route{
 		deleteContractAPI,
