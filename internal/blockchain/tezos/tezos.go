@@ -49,6 +49,9 @@ const (
 	ReceiptTransactionFailed  string = "TransactionFailed"
 )
 
+var networkActionMethodName = "networkAction"
+var batchPinMethodName = "pinBatch"
+
 type Tezos struct {
 	ctx                  context.Context
 	cancelCtx            context.CancelFunc
@@ -291,13 +294,69 @@ func (t *Tezos) ResolveSigningKey(ctx context.Context, key string, intent blockc
 }
 
 func (t *Tezos) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
-	// TODO: impl
+	tezosLocation, err := t.parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	version, err := t.GetNetworkVersion(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	methodName, input := t.buildBatchPinInput(ctx, version, networkNamespace, batch)
+
+	fmt.Println(tezosLocation, methodName, input)
+
 	return nil
+
+	// return t.invokeContractMethod(ctx, tezosLocation.Address, methodName, signingKey, nsOpID, input, nil)
 }
 
 func (t *Tezos) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
-	// TODO: impl
+	tezosLocation, err := t.parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	var input []interface{}
+
+	methodName := networkActionMethodName
+	input = []interface{}{
+		blockchain.FireFlyActionPrefix + action,
+		"",
+	}
+
+	fmt.Println(tezosLocation, methodName, input)
+
 	return nil
+
+	// return t.invokeContractMethod(ctx, tezosLocation.Address, methodName, signingKey, nsOpID, input, nil)
+}
+
+func (t *Tezos) buildBatchPinInput(ctx context.Context, version int, namespace string, batch *blockchain.BatchPin) (string, []interface{}) {
+	tezosHashes := make([]string, len(batch.Contexts))
+	for i, v := range batch.Contexts {
+		// ethHashes[i] = ethHexFormatB32(v)
+		tezosHashes[i] = v.String()
+	}
+	var uuids fftypes.Bytes32
+	copy(uuids[0:16], (*batch.TransactionID)[:])
+	copy(uuids[16:32], (*batch.BatchID)[:])
+
+	var input []interface{}
+
+	methodName := batchPinMethodName
+	input = []interface{}{
+		// ethHexFormatB32(&uuids),
+		uuids.String(),
+		// ethHexFormatB32(batch.BatchHash),
+		batch.BatchHash.String(),
+		batch.BatchPayloadRef,
+		tezosHashes,
+	}
+
+	return methodName, input
 }
 
 func (t *Tezos) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) error {
@@ -321,7 +380,10 @@ func (t *Tezos) InvokeContract(ctx context.Context, nsOpID string, signingKey st
 		return err
 	}
 
-	// TODO: add batch pin support
+	if batch != nil {
+		// methodName, batchPin := t.buildBatchPinInput(ctx, 2, "", batch)
+		print("BATCH: ", batch)
+	}
 
 	return t.invokeContractMethod(ctx, tezosLocation.Address, methodName, signingKey, nsOpID, michelsonInput, options)
 }
